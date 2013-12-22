@@ -1,32 +1,30 @@
-<script src="/socket.io/socket.io.js"></script>
-<polymer-element name="socket-io" attributes="socketUrl userId message">
+<script src="components/socket.io-client/dist/socket.io.js"></script>
+
+<polymer-element name="socket-io" attributes="socketUrl userId autoConnect listenTo connected outEventName inMessage outMessage">
   <script>
     Polymer("socket-io", {
-	    userId: 'pio',
-      message:null,
       socketUrl:document.location.hostname,
-      ready:function(){
-		    //window.addEventListener('beforeunload', this.beforeUnload.bind(this), true);
+	    userId: 'pio',
+      autoConnect: false,
+      connected: false,
+      outEventName:"message", 
+      outMessage:null,           
+      inMessage:null,
+      listenTo: [],
+      enteredView:function(){
 		    window.onbeforeunload = this.beforeUnload.bind(this);
-		    this.connect();
+        if(this.autoConnect) this.connect();
 	    },
-      messageChanged: function()
-		  {
-        	this.send(null, this.message);
-      },
-      socketUrlChanged: function() {
-			  this.connect();
-      },
-		  receive: function(msg) {
-        	this.message = JSON.parse(msg.data);
+      //public api
+      receive: function(msg) {
+        this.message = JSON.parse(msg.data);
       },
       send: function(prefix, data)
 	    {
-			  var prefix = prefix || "message";
 			  console.log("sending message via socket-io",data);
 			  try
 			  {
-				  this.ws.emit(prefix, data);
+				  this.ws.emit(this.outEventName, data);
 			  }catch(error)
 			  {
 				  console.log("cannot send message: error:"+error);
@@ -39,9 +37,14 @@
         if(window.io != undefined)
         {
 		      this.ws = io.connect(this.socketUrl);
-		      this.ws.on('error', this.onError.bind(this) );
-		      this.ws.on('disconnect', this.onError.bind(this) );
+          this.ws.on('connect', this.onConnect.bind(this) );
+		      this.ws.on('disconnect', this.onDisconnect.bind(this) );
+          this.ws.on('error', this.onError.bind(this) );
 		      this.ws.on('connect_failed', this.onError.bind(this) );
+          this.ws.on('message', this.onMessageRecieved.bind(this));
+
+          //this.setupListening();
+             
         }else
         {
             console.error("Could not import socket.io library");
@@ -49,17 +52,69 @@
 	    },
 	    disconnect:function()
 	    {
-		    if (this.ws != undefined)
+		    if (this.ws != undefined && !this.connected)
 		    {
-			    this.ws.disconnect();
-			    this.ws.removeListener('error',this.onError);
-			    this.ws.removeListener('disconnect',this.onError);
-			    this.ws.removeListener('connect_failed',this.onError);
-		    }
+          try
+          {
+			      this.ws.disconnect();
+			      this.ws.removeListener('error',this.onError);
+			      this.ws.removeListener('disconnect',this.onError);
+			      this.ws.removeListener('connect_failed',this.onError);
+		      }
+          catch(error)
+          {
+            this.onError(error);
+          }
+        }
 	    },
-	    onError:function (error)
+      //change handlers
+      outMessageChanged: function()
+		  {
+        	this.send(null, this.outMessage);
+      },
+      socketUrlChanged: function() {
+        if(this.connected) this.connect();
+      },
+      listenToChanged: function(oldListenTo)
+      {
+        //console.log("listenToList changed",this.listenTo);
+        
+        if(this.ws != undefined)
+        {
+          if(oldListenTo)
+          {
+            //console.log("old:",oldListenTo,"new",this.listenTo)
+            for(var i=0;i<oldListenTo.length;i++)
+            {
+              var messageName = oldListenTo[i];
+              console.log("removing",messageName)
+              this.ws.removeAllListeners(messageName)
+            } 
+          }
+          for(var i=0;i<this.listenTo.length;i++)
+          {
+            var messageName = this.listenTo[i];
+            this.ws.on(messageName, this.onMessageRecieved.bind(this)) 
+          }
+        }
+      },
+      //event handlers
+      onConnect:function(event){
+        console.log("connected")
+        this.connected = true;
+      },
+      onDisconnect:function(event){
+        console.log("disconnected")
+        this.connected = false;
+      },
+      onError:function (error)
 	    {
 		    console.log('Error in socket.io',error);
+      },
+      onMessageRecieved:function(msg)
+      { 
+        //console.log("recieved",msg,"current",this)
+        this.inMessage =  JSON.stringify(msg);
       },
 	    beforeUnload: function(event) {
 		    this.disconnect();
