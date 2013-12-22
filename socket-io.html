@@ -1,0 +1,69 @@
+<script src="/socket.io/socket.io.js"></script>
+<polymer-element name="socket-io" attributes="socketUrl userId message">
+  <script>
+    Polymer("socket-io", {
+	    userId: 'pio',
+      message:null,
+      socketUrl:document.location.hostname,
+      ready:function(){
+		    //window.addEventListener('beforeunload', this.beforeUnload.bind(this), true);
+		    window.onbeforeunload = this.beforeUnload.bind(this);
+		    this.connect();
+	    },
+      messageChanged: function()
+		  {
+        	this.send(null, this.message);
+      },
+      socketUrlChanged: function() {
+			  this.connect();
+      },
+		  receive: function(msg) {
+        	this.message = JSON.parse(msg.data);
+      },
+      send: function(prefix, data)
+	    {
+			  var prefix = prefix || "message";
+			  console.log("sending message via socket-io",data);
+			  try
+			  {
+				  this.ws.emit(prefix, data);
+			  }catch(error)
+			  {
+				  console.log("cannot send message: error:"+error);
+			  }
+      },
+	    connect:function()
+	    {
+		    console.log("socketUrl",this.socketUrl);
+		    this.disconnect();
+        if(window.io != undefined)
+        {
+		      this.ws = io.connect(this.socketUrl);
+		      this.ws.on('error', this.onError.bind(this) );
+		      this.ws.on('disconnect', this.onError.bind(this) );
+		      this.ws.on('connect_failed', this.onError.bind(this) );
+        }else
+        {
+            console.error("Could not import socket.io library");
+         }
+	    },
+	    disconnect:function()
+	    {
+		    if (this.ws != undefined)
+		    {
+			    this.ws.disconnect();
+			    this.ws.removeListener('error',this.onError);
+			    this.ws.removeListener('disconnect',this.onError);
+			    this.ws.removeListener('connect_failed',this.onError);
+		    }
+	    },
+	    onError:function (error)
+	    {
+		    console.log('Error in socket.io',error);
+      },
+	    beforeUnload: function(event) {
+		    this.disconnect();
+      }
+    });
+    </script>
+</polymer-element>

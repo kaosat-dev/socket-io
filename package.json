@@ -1,0 +1,21 @@
+{
+  "name": "polymer-websockets",
+  "version": "0.0.0",
+  "description": "websocket and socket.io polymer components",
+  "main": "",
+  "repository": {
+    "type": "git",
+    "url": "kaosat-dev/polymer-websockets"
+  },
+  "keywords": [
+    "websocket",
+    "socketio",
+    "polymer"
+  ],
+  "author": "Mark \"kaosat-dev\" Moissette",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "socket.io": ""
+  }
+}
