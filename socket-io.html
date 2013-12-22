@@ -42,9 +42,6 @@
           this.ws.on('error', this.onError.bind(this) );
 		      this.ws.on('connect_failed', this.onError.bind(this) );
           this.ws.on('message', this.onMessageRecieved.bind(this));
-
-          //this.setupListening();
-             
         }else
         {
             console.error("Could not import socket.io library");
@@ -70,6 +67,7 @@
       //change handlers
       outMessageChanged: function()
 		  {
+        console.log("outMessageChanged");
         	this.send(null, this.outMessage);
       },
       socketUrlChanged: function() {
@@ -78,16 +76,13 @@
       listenToChanged: function(oldListenTo)
       {
         //console.log("listenToList changed",this.listenTo);
-        
         if(this.ws != undefined)
         {
           if(oldListenTo)
           {
-            //console.log("old:",oldListenTo,"new",this.listenTo)
             for(var i=0;i<oldListenTo.length;i++)
             {
               var messageName = oldListenTo[i];
-              console.log("removing",messageName)
               this.ws.removeAllListeners(messageName)
             } 
           }
@@ -113,8 +108,8 @@
       },
       onMessageRecieved:function(msg)
       { 
-        //console.log("recieved",msg,"current",this)
-        this.inMessage =  JSON.stringify(msg);
+        console.log("recieved",msg,"current",this)
+        this.inMessage = msg;
       },
 	    beforeUnload: function(event) {
 		    this.disconnect();

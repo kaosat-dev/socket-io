@@ -11,9 +11,13 @@ io.sockets.on('connection', function (socket) {
   socket.on('my other event', function (data) {
     console.log(data);
   });
+
   socket.on('message', function (data) {
     console.log("SERVER recieved message",data);
+    data.sender = "other";
+    socket.broadcast.emit('message',data);
   });
+
   socket.on('foo', function (data) {
     console.log("SERVER recieved foo",data);
   });
