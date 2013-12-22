@@ -1,5 +1,5 @@
-polymer-websockets: websocket and socket.io polymer components
-==============================================================
+polymer-socket-io: socket.io web component
+==========================================
 
 Licence
 =======

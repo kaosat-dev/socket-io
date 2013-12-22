@@ -1,11 +1,11 @@
 {
-  "name": "polymer-websockets",
+  "name": "polymer-socket-io",
   "version": "0.0.0",
-  "description": "websocket and socket.io polymer components",
+  "description": "socket.io polymer components",
   "main": "",
   "repository": {
     "type": "git",
-    "url": "kaosat-dev/polymer-websockets"
+    "url": "kaosat-dev/polymer-socket-io"
   },
   "keywords": [
     "websocket",
