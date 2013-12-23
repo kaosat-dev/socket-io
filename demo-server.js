@@ -25,7 +25,9 @@ io.sockets.on('connection', function (socket) {
   var index = 0;
   function spamMessage()
   {
-    socket.emit('news', { hello: 'world'+index });
+    var data = { hello: 'world'+index };
+    console.log("SERVER sending to : news, data",data);
+    socket.emit('news', data);
     index +=1;
   }
 
