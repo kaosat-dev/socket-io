@@ -8,6 +8,12 @@ Socket.io Element.
 ##### Example
 
     <socket-io></socket-io>
+    
+##### Other example (see chat-client demo)!
+
+    <socket-io socketUrl="http://localhost:8082" 
+        listenTo=["message","userChanged"] inMessage={{inMessage}} outMessage={{outMessage}} outEventName="message">
+    </socket-io>
 
 @element socket-io
 @blurb Web component for socket-io interactions
@@ -23,7 +29,7 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
   <script>
     Polymer("socket-io", {
       /**
-       * The `socketUrl` is the adress of the socket url to connect to
+       * socketUrl` sets the adress of the socket url to connect to
        * defaults to hostname
        * 
        * @attribute socketUrl
@@ -31,7 +37,7 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
        */
       socketUrl:document.location.hostname,
       /**
-       * The `autoConnect` attribute toggles the automatic connection after initialization
+       * 'autoConnect` toggles the automatic connection after initialization
        * 
        * @attribute autoConnect
        * @type bool
@@ -43,24 +49,29 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
        * @type bool
        */
       connected: false,
+      /**
+       * The `outEventName` attribute sets the current outgoing event's 'name'
+       * 
+       * @attribute outEventName
+       * @type string
+       */
       outEventName:"message", 
       /**
-       * The `outMessage` attribute sets the current outgoing message
+       * `outMessage`sets the current outgoing message
        * 
        * @attribute outMessage
        * @type string/object
        */
       outMessage:null,  
       /**
-       * The `inMessage` attribute will contain the last incoming message
+       * 'inMessage' will contain the last incoming message
        * 
        * @attribute inMessage
        * @type string/object
        */         
       inMessage:null,
-      outEventName:"message", 
       /**
-       * The `listenTo` attribute sets list of messages to listen to
+       * `listenTo` sets the list of messages to listen to
        * 
        * @attribute listenTo
        * @type list
