@@ -1,6 +1,6 @@
 {
-  "name": "polymer-socket-io",
-  "version": "0.0.0",
+  "name": "socket-io",
+  "version": "0.0.1",
   "private": true,
   "dependencies": {
     "platform": "Polymer/platform#master",
