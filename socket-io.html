@@ -1,6 +1,6 @@
-<script src="components/socket.io-client/dist/socket.io.js"></script>
+<link rel="import" href="../polymer/polymer.html">
+<script src="..//socket.io-client/dist/socket.io.js"></script>
 
-<!--TODO: should we expose some event so parsing the "inMessage" is optional (for more complex cases)?-->
 
 <!--
 Socket.io Element.
@@ -13,6 +13,8 @@ Socket.io Element.
 @blurb Web component for socket-io interactions
 @status alpha
 @homepage http://kaosat-dev.github.io/socket-io
+
+TODO: should we expose some event so parsing the "inMessage" is optional (for more complex cases)?
 -->
 <polymer-element name="socket-io" attributes="socketUrl autoConnect listenTo connected outEventName inMessage outMessage">
   <script>
