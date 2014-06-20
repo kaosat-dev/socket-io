@@ -19,12 +19,49 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
 <polymer-element name="socket-io" attributes="socketUrl autoConnect listenTo connected outEventName inMessage outMessage">
   <script>
     Polymer("socket-io", {
+      /**
+       * The `socketUrl` is the adress of the socket url to connect to
+       * defaults to hostname
+       * 
+       * @attribute socketUrl
+       * @type string
+       */
       socketUrl:document.location.hostname,
+      /**
+       * The `autoConnect` attribute toggles the automatic connection after initialization
+       * 
+       * @attribute autoConnect
+       * @type bool
+       */
       autoConnect: false,
+       /** The `connected` attribute is switched based on connection stations
+       * 
+       * @attribute connected
+       * @type bool
+       */
       connected: false,
       outEventName:"message", 
-      outMessage:null,           
+      /**
+       * The `outMessage` attribute sets the current outgoing message
+       * 
+       * @attribute outMessage
+       * @type string/object
+       */
+      outMessage:null,  
+      /**
+       * The `inMessage` attribute will contain the last incoming message
+       * 
+       * @attribute inMessage
+       * @type string/object
+       */         
       inMessage:null,
+      outEventName:"message", 
+      /**
+       * The `listenTo` attribute sets list of messages to listen to
+       * 
+       * @attribute listenTo
+       * @type list
+       */
       listenTo: [],
       
       enteredView:function(){
@@ -42,6 +79,13 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
 	      this.ws.on('connect_failed', this.onError.bind(this) );
       },
       //public api
+      /**
+       * The `emit` method will send an event with 'data' as content
+       * 
+       * @method emit
+       * @param {String} event event to send
+       * @param {String} data data to send
+       */
       emit: function(event, data)
 	    {
 			  console.log("sending '"+event+ "'via polymer-socket-io: data",data);
@@ -53,11 +97,23 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
 				  console.log("cannot send message: error:"+error);
 			  }
       },
+      /**
+       * The `connect` method will ...connect this instance to the server at
+       * the current socketUrl
+       * it also disconnects this instance if previously connected before re-connecting
+       * 
+       * @method connect
+       */
 	    connect:function()
 	    {
 		    this.disconnect();
         this.ws.socket.connect()
 	    },
+	    /**
+       * The `disconnect` method will ...disconnect this instance from the server
+       * 
+       * @method disconnect
+       */
 	    disconnect:function()
 	    {
 		    if (this.ws != undefined && !this.connected)
