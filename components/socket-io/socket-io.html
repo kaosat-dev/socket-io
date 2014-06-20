@@ -1,0 +1,225 @@
+<link rel="import" href="../polymer/polymer.html">
+<script src="..//socket.io-client/dist/socket.io.js"></script>
+
+
+<!--
+Socket.io Element.
+
+##### Example
+
+    <socket-io></socket-io>
+    
+##### Other example (see chat-client demo)!
+
+    <socket-io socketUrl="http://localhost:8082" 
+        listenTo=["message","userChanged"] inMessage={{inMessage}} outMessage={{outMessage}} outEventName="message">
+    </socket-io>
+
+@element socket-io
+@blurb Web component for socket-io interactions
+@status alpha
+@homepage http://kaosat-dev.github.io/socket-io
+
+You can find a fleshed out example (small chat app) that needs to be run from a local server in this folder
+(demo-chat-client & server), see README for more information.
+
+TODO: should we expose some event so parsing the "inMessage" is optional (for more complex cases)?
+-->
+<polymer-element name="socket-io" attributes="socketUrl autoConnect listenTo connected outEventName inMessage outMessage">
+  <script>
+    Polymer("socket-io", {
+      /**
+       * socketUrl` sets the adress of the socket url to connect to
+       * defaults to hostname
+       * 
+       * @attribute socketUrl
+       * @type string
+       */
+      socketUrl:document.location.hostname,
+      /**
+       * 'autoConnect` toggles the automatic connection after initialization
+       * 
+       * @attribute autoConnect
+       * @type bool
+       */
+      autoConnect: false,
+       /** The `connected` attribute is switched based on connection stations
+       * 
+       * @attribute connected
+       * @type bool
+       */
+      connected: false,
+      /**
+       * The `outEventName` attribute sets the current outgoing event's 'name'
+       * 
+       * @attribute outEventName
+       * @type string
+       */
+      outEventName:"message", 
+      /**
+       * `outMessage`sets the current outgoing message
+       * 
+       * @attribute outMessage
+       * @type string/object
+       */
+      outMessage:null,  
+      /**
+       * 'inMessage' will contain the last incoming message
+       * 
+       * @attribute inMessage
+       * @type string/object
+       */         
+      inMessage:null,
+      /**
+       * `listenTo` sets the list of messages to listen to
+       * 
+       * @attribute listenTo
+       * @type list
+       */
+      listenTo: [],
+      
+      enteredView:function(){
+		    window.onbeforeunload = this.beforeUnload.bind(this);
+        this.init();
+        if(this.autoConnect) this.connect();
+	    },
+      init:function()
+      {
+        if(window.io == undefined) throw new Error("Could not import socket.io library");
+        this.ws = io.connect(this.socketUrl,{'auto connect': false });
+        this.ws.on('connect', this.onConnect.bind(this) );
+	      this.ws.on('disconnect', this.onDisconnect.bind(this) );
+        this.ws.on('error', this.onError.bind(this) );
+	      this.ws.on('connect_failed', this.onError.bind(this) );
+      },
+      //public api
+      /**
+       * The `emit` method will send an event with 'data' as content
+       * 
+       * @method emit
+       * @param {String} event event to send
+       * @param {String} data data to send
+       */
+      emit: function(event, data)
+	    {
+			  console.log("sending '"+event+ "'via polymer-socket-io: data",data);
+			  try
+			  {
+				  if(this.ws) this.ws.emit(event, data);
+			  }catch(error)
+			  {
+				  console.log("cannot send message: error:"+error);
+			  }
+      },
+      /**
+       * The `connect` method will ...connect this instance to the server at
+       * the current socketUrl
+       * it also disconnects this instance if previously connected before re-connecting
+       * 
+       * @method connect
+       */
+	    connect:function()
+	    {
+		    this.disconnect();
+        this.ws.socket.connect()
+	    },
+	    /**
+       * The `disconnect` method will ...disconnect this instance from the server
+       * 
+       * @method disconnect
+       */
+	    disconnect:function()
+	    {
+		    if (this.ws != undefined && !this.connected)
+		    {
+          try{
+            this.ws.disconnect();}
+          catch(error){
+            this.onError(error);
+          }
+        }
+	    },
+      //change handlers
+      connectedChanged: function(oldValue)
+      {
+        console.log("connectedChanged",oldValue,"->",this.connected);
+        if(!oldValue && this.connected)
+        {
+          this.connect();
+        }
+        else{ this.disconnect();}
+      },
+      outMessageChanged: function()
+		  {
+        if(this.outMessage)
+        {
+          var fullMessage = this.outMessage;
+          var eventName = this.outEventName;
+          if( this.outMessage instanceof Object )
+          {
+            if("event" in fullMessage)
+            {
+              eventName = fullMessage.event;
+              fullMessage = fullMessage.data;
+            }
+          }  
+          this.emit(eventName, fullMessage);
+        }
+      },
+      socketUrlChanged: function() {
+        if(this.connected ) this.connect();
+      },
+      listenToChanged: function(oldListenTo)
+      {
+        //console.log("listenToList changed",this.listenTo,this.connected,this.ws);
+        if(this.ws != undefined)
+        {
+          if(oldListenTo)
+          {
+            for(var i=0;i<oldListenTo.length;i++)
+            {
+              var messageName = oldListenTo[i];
+              this.ws.removeAllListeners(messageName)
+            } 
+          }
+          for(var i=0;i<this.listenTo.length;i++)
+          {
+            var messageName = this.listenTo[i];
+            this.ws.on(messageName, this.onMessageRecieved.bind(this, messageName)) 
+          }
+        }
+      },
+      //event handlers
+      onConnect:function(event){
+        console.log("polymer-socket-io connected")
+        this.connected = true;
+      },
+      onDisconnect:function(event){
+        console.log("polymer-socket-io disconnected")
+        this.connected = false;
+      },
+      onError:function (error)
+	    {
+		    console.log('Error in polymer-socket-io',error);
+      },
+      onMessageRecieved:function(event,msg)
+      { 
+        console.log("recieved event",event, msg)
+        this.inMessage = {event:event,data:msg};
+      },
+	    beforeUnload: function(event) {
+		    this.disconnect();
+        this.ws.removeAllListeners('connect');
+        this.ws.removeAllListeners('disconnect');
+	      this.ws.removeAllListeners('error');
+	      this.ws.removeAllListeners('connect_failed');
+        for(var i=0;i<this.listenTo.length;i++)
+        {
+          var messageName = this.listenTo[i];
+          this.ws.removeAllListeners(messageName)
+        } 
+        this.ws = null;
+      }
+    });
+    </script>
+</polymer-element>

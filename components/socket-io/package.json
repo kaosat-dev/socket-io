@@ -1,0 +1,21 @@
+{
+  "name": "socket-io",
+  "version": "0.0.0",
+  "description": "socket.io web component (polymer)",
+  "main": "",
+  "repository": {
+    "type": "git",
+    "url": "kaosat-dev/socket-io"
+  },
+  "keywords": [
+    "websocket",
+    "socketio",
+    "polymer"
+  ],
+  "author": "Mark \"kaosat-dev\" Moissette",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "socket.io": ""
+  }
+}

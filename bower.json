@@ -1,0 +1,7 @@
+{
+  "name": "socket-io#gh-pages",
+  "private": true,
+  "dependencies": {
+    "socket-io": "kaosat-dev/socket-io#master"
+  }
+}

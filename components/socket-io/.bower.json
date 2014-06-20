@@ -1,0 +1,23 @@
+{
+  "name": "socket-io",
+  "private": true,
+  "dependencies": {
+    "platform": "Polymer/platform#master",
+    "polymer": "Polymer/polymer#master",
+    "socket.io-client": "~0.9.16"
+  },
+  "ignore": [
+    "demo-server.js"
+  ],
+  "homepage": "https://github.com/kaosat-dev/socket-io",
+  "_release": "ea12d87b11",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "ea12d87b119b869e2175bd57797643ec183914b2"
+  },
+  "_source": "git://github.com/kaosat-dev/socket-io.git",
+  "_target": "master",
+  "_originalSource": "kaosat-dev/socket-io",
+  "_direct": true
+}
