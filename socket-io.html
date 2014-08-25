@@ -179,13 +179,13 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
             for(var i=0;i<oldListenTo.length;i++)
             {
               var messageName = oldListenTo[i];
-              this.ws.removeAllListeners(messageName)
+              this.ws.removeAllListeners(messageName);
             } 
           }
           for(var i=0;i<this.listenTo.length;i++)
           {
             var messageName = this.listenTo[i];
-            this.ws.on(messageName, this.onMessageRecieved.bind(this, messageName)) 
+            this.ws.on(messageName, this.onMessageRecieved.bind(this, messageName));
           }
         }
       },
@@ -193,10 +193,12 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
       onConnect:function(event){
         console.log("polymer-socket-io connected")
         this.connected = true;
+        this.fire('s-io-connected');
       },
       onDisconnect:function(event){
         console.log("polymer-socket-io disconnected")
         this.connected = false;
+        this.fire('s-io-disconnected');
       },
       onError:function (error)
 	    {
@@ -204,8 +206,11 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
       },
       onMessageRecieved:function(event,msg)
       { 
-        console.log("recieved event",event, msg)
+        //console.log("recieved data",event, msg)
         this.inMessage = {event:event,data:msg};
+        //console.log("firing event",'s-io-'+event);
+        this.fire('s-io-'+event, {msg:msg});
+        //TODO: replace with <core-signals>
       },
 	    beforeUnload: function(event) {
 		    this.disconnect();
