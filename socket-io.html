@@ -25,7 +25,7 @@ You can find a fleshed out example (small chat app) that needs to be run from a 
 
 TODO: should we expose some event so parsing the "inMessage" is optional (for more complex cases)?
 -->
-<polymer-element name="socket-io" attributes="socketUrl autoConnect listenTo connected outEventName inMessage outMessage">
+<polymer-element name="socket-io" attributes="socketUrl namespace autoConnect listenTo connected outEventName inMessage outMessage">
   <script>
     Polymer("socket-io", {
       /**
@@ -36,6 +36,14 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
        * @type string
        */
       socketUrl:document.location.hostname,
+      /**
+       * namespace sets the namespace to use (see socket.io docs)
+       * defaults to '/'
+       * 
+       * @attribute namespace
+       * @type string
+       */
+      namespace:"/",
       /**
        * 'autoConnect` toggles the automatic connection after initialization
        * 
@@ -48,7 +56,11 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
        * @attribute connected
        * @type bool
        */
-      connected: false,
+       
+      publish: {
+        get connected(){return this._connected;}
+      },
+      _connected: false,
       /**
        * The `outEventName` attribute sets the current outgoing event's 'name'
        * 
@@ -78,7 +90,7 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
        */
       listenTo: [],
       
-      enteredView:function(){
+      attached:function(){
 		    window.onbeforeunload = this.beforeUnload.bind(this);
         this.init();
         if(this.autoConnect) this.connect();
@@ -86,11 +98,24 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
       init:function()
       {
         if(window.io == undefined) throw new Error("Could not import socket.io library");
-        this.ws = io.connect(this.socketUrl,{'auto connect': false });
-        this.ws.on('connect', this.onConnect.bind(this) );
+        
+        var manager = this.manager = io.Manager( this.socketUrl, {'auto connect': false } );
+        this.ws = manager.socket(this.namespace);
+        
+	      manager.on('open', this.onConnect.bind(this) );
+	      manager.on('close', this.onDisconnect.bind(this) );
+	      
+        manager.on('error', this.onError.bind(this) );
+	      manager.on('connect_failed', this.onError.bind(this) );
+	      manager.on('connect_timeout', this.onError.bind(this) );
+	      manager.on('reconnect_failed', this.onReconnectFailed.bind(this) );
+	      manager.on('reconnect_error', this.onError.bind(this) );
+        
+        //this.ws = io.connect(this.socketUrl,{'auto connect': false });
+        /*this.ws.on('connect', this.onConnect.bind(this) );
 	      this.ws.on('disconnect', this.onDisconnect.bind(this) );
         this.ws.on('error', this.onError.bind(this) );
-	      this.ws.on('connect_failed', this.onError.bind(this) );
+	      this.ws.on('connect_failed', this.onError.bind(this) );*/
       },
       //public api
       /**
@@ -121,7 +146,7 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
 	    connect:function()
 	    {
 		    this.disconnect();
-        this.ws.connect()
+        this.ws.connect();
 	    },
 	    /**
        * The `disconnect` method will ...disconnect this instance from the server
@@ -130,10 +155,11 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
        */
 	    disconnect:function()
 	    {
-		    if (this.ws != undefined && !this.connected)
+		    if (this.ws != undefined && !this._connected)
 		    {
           try{
-            this.ws.disconnect();}
+            this.ws.disconnect();
+          }
           catch(error){
             this.onError(error);
           }
@@ -142,12 +168,12 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
       //change handlers
       connectedChanged: function(oldValue)
       {
-        console.log("connectedChanged",oldValue,"->",this.connected);
-        if(!oldValue && this.connected)
+        console.log("connectedChanged",oldValue,"->",this._connected);
+        /*if(!oldValue && this.connected)
         {
           this.connect();
         }
-        else{ this.disconnect();}
+        else{ this.disconnect();}*/
       },
       outMessageChanged: function()
 		  {
@@ -167,7 +193,10 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
         }
       },
       socketUrlChanged: function() {
-        if(this.connected ) this.connect();
+        if(this._connected ) this.connect();
+      },
+      namespaceChanged:function() {
+        if(this._connected ) this.connect();
       },
       listenToChanged: function(oldListenTo)
       {
@@ -192,17 +221,21 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
       //event handlers
       onConnect:function(event){
         console.log("polymer-socket-io connected")
-        this.connected = true;
+        this._connected = true;
         this.fire('s-io-connected');
       },
       onDisconnect:function(event){
         console.log("polymer-socket-io disconnected")
-        this.connected = false;
+        this._connected = false;
         this.fire('s-io-disconnected');
       },
       onError:function (error)
 	    {
 		    console.log('Error in polymer-socket-io',error);
+      },
+      onReconnectFailed:function (error)
+	    {
+		    console.log('Reconnect failed polymer-socket-io',error);
       },
       onMessageRecieved:function(event,msg)
       { 
@@ -214,16 +247,17 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
       },
 	    beforeUnload: function(event) {
 		    this.disconnect();
-        this.ws.removeAllListeners('connect');
-        this.ws.removeAllListeners('disconnect');
-	      this.ws.removeAllListeners('error');
-	      this.ws.removeAllListeners('connect_failed');
+        this.manager.removeAllListeners('connect');
+        this.manager.removeAllListeners('disconnect');
+	      this.manager.removeAllListeners('error');
+	      this.manager.removeAllListeners('connect_failed');
         for(var i=0;i<this.listenTo.length;i++)
         {
           var messageName = this.listenTo[i];
           this.ws.removeAllListeners(messageName)
         } 
         this.ws = null;
+        this.manager = null;
       }
     });
     </script>
