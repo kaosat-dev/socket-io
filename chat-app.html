@@ -1,0 +1,113 @@
+<link rel="import" href="components/polymer/polymer.html">
+<link rel="import" href="components/socket-io/socket-io.html">
+
+<polymer-element name="chat-app">
+    <template>
+      <style>
+      </style>
+      <socket-io id="socketIo" socketUrl="http://localhost:8082" 
+       connected={{connected}} listenTo=["message","userChanged"] inMessage={{inMessage}} outMessage={{outMessage}} outEventName={{outEventName}} autoConnect="{{autoConnect}}">
+      </socket-io>
+      <div>
+        UserName: <input type="text" id="userName" value="{{user.name}}"/>
+        UserColor: <input type="color" id="userColor" value="{{user.color}}"/>
+        Connected: <input type="checkbox" checked={{connected}} disabled/>
+        AutoConnect: <input type="checkbox" checked={{autoConnect}}/>
+        <input type="button" value="connect" on-tap="{{connect}}"> </input> 
+        <!--<span style="background-color: {{ {'red': !connected, 'limegreen':connected} | tokenList }}; width:16px;height:16px;display: inline-block;" > </span>-->
+      </div>
+      <div>
+        <input type="text" id="messageInput" on-keydown="{{onMessageKeydown}}" disabled?="{{!connected}}"/>
+        <button on-click="{{sendMessage}}">Send</button>
+      </div>
+      <template repeat="{{message in messages}}">
+        <div style="max-height:400px">
+          <div>
+            <!---<span style="color: {{ {'red': message.sender!='me', 'blue':message.sender=='me'} | tokenList  }}">-->
+            <!--<span style="color:{{user.color}}">{{message.sender}}</span>-->
+            <!--FIXME: WE NEED THIS : color:{{clients[message.sender].color}}-->
+            <template if="{{message.sender =='me'}}">
+              <span style="color:{{user.color}}">{{message.sender}} :</span>
+            </template>
+            <template if="{{message.sender !='me'}}">
+              <span style="color:{{message.color}}">{{message.sender}} :</span>
+            </template>
+            
+            <span>{{message.content}} </span>
+          </div>
+        </div>
+      </template>
+    </template>
+    <script>
+      Polymer("chat-app", {
+        outEventName: "message",
+        inMessage: "",
+        outMessage: "",
+        connected: null,
+        autoConnect:true,
+        messages: [],
+        clients: {},
+        observe: {
+            'user.name': 'userChanged',
+            'user.color': 'userChanged'
+          },
+        ready:function(){
+          this.user = {name:"foo"+Math.floor((Math.random()*10)+1),color:"#ff0000"};
+        },
+        //api
+        connect:function(){
+          this.$.socketIo.connect();
+        },
+        sendMessage:function(event){
+          if(this.$.messageInput.value != "") {
+            var baseMessage = {content:this.$.messageInput.value,ts:new Date().getTime(),sender:"me"};//without timestamp etc outmessage does not change (change handlers)
+            this.outMessage = {event:"message", data: baseMessage};
+            this.messages.push(baseMessage);
+            this.$.messageInput.value = "";//since we don't do databind we reset the field manually
+          }
+        },
+        onMessageKeydown:function(event)
+        { if(event.keyCode && event.keyCode==13) this.sendMessage();
+        },
+        //Attribute change handlers
+        connectedChanged:function(){
+          console.log("connected changed", this.connected);
+        },
+        inMessageChanged:function(){
+          console.log("inMessage", this.inMessage);
+          var event = this.inMessage.event;
+          var data = this.inMessage.data;
+          switch(event)
+          {
+            case "message":
+              //FIXME: HACK !!
+              var cli = this.clients[data.senderId];
+              if(cli)
+              {
+                data.color = cli.color;
+                data.sender = cli.name;
+                this.messages.push(data);
+              }
+            break;
+            case "userChanged":
+              this.clients = data; 
+              var clients= this.clients;
+              for(var i=0; i<this.messages.length;i++) //TODO: hack/workaround unti polymer expressions allow correct access to object[key].bla
+              {
+                var msg = this.messages[i];
+                if(msg.color) msg.color = clients[msg.senderId].color;
+                if(msg.sender && msg.sender!="me") msg.sender = clients[msg.senderId].name;
+              }
+            break;
+          }
+        },
+        userChanged:function(){
+          if(this.connected) this.outMessage = {event:"userChanged",data:{user:this.user}};
+        },
+        connectedChanged:function()
+        {
+          if(this.connected){this.outMessage = {event:"userChanged",data:{user:this.user}};}
+        }
+      });
+    </script>
+  </polymer-element>

@@ -1,6 +1,19 @@
-var io = require('socket.io').listen(8082);
-io.set('log level', 1);
+var express    = require('express'); 		// call express
+var app        = express(); 				// define our app using express
+var port       = process.env.PORT || 8090; 		// set our port
+var fs         = require("fs");
+var path       = require("path");
+app.use(express.static("./"));
 
+var io = require('socket.io').listen(8082);
+
+//we need to create a fake socket-io component folder, to dance around path issues
+var fakePath = path.resolve("./components/socket-io");
+if(!(fs.existsSync( fakePath ) ) )
+{
+  fs.mkdirSync( fakePath );
+  fs.symlinkSync(path.resolve("./socket-io.html"), path.resolve("./components/socket-io/socket-io.html"))
+}
 
 var clientsMap = {};
 
@@ -29,3 +42,6 @@ io.sockets.on('connection', function (socket) {
   });
 
 });
+
+app.listen(port);
+console.log('Started web server on port ' + port);

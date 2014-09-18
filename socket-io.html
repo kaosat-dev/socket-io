@@ -25,7 +25,7 @@ You can find a fleshed out example (small chat app) that needs to be run from a 
 
 TODO: should we expose some event so parsing the "inMessage" is optional (for more complex cases)?
 -->
-<polymer-element name="socket-io" attributes="socketUrl namespace autoConnect listenTo connected outEventName inMessage outMessage">
+<polymer-element name="socket-io" attributes="socketUrl namespace autoConnect autoReConnect connected listenTo outEventName inMessage outMessage">
   <script>
     Polymer("socket-io", {
       /**
@@ -44,6 +44,7 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
        * @type string
        */
       namespace:"/",
+      
       /**
        * 'autoConnect` toggles the automatic connection after initialization
        * 
@@ -51,16 +52,29 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
        * @type bool
        */
       autoConnect: false,
-       /** The `connected` attribute is switched based on connection stations
+      
+       /** The `reconnected` toggles the automatic reconnection after errors etc
+       * 
+       * @attribute autoReConnect
+       * @type bool
+       */
+      autoReConnect: false,
+      
+       /** The `connected` attribute is switched based on connection status, shadowing
+       *  the interal _connected attribute
        * 
        * @attribute connected
        * @type bool
        */
-       
-      publish: {
-        get connected(){return this._connected;}
-      },
+      connected:null,
+      
+      /** internal attribute is switched based on connection stations
+       * 
+       * @attribute _connected
+       * @type bool
+      */
       _connected: false,
+
       /**
        * The `outEventName` attribute sets the current outgoing event's 'name'
        * 
@@ -99,7 +113,7 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
       {
         if(window.io == undefined) throw new Error("Could not import socket.io library");
         
-        var manager = this.manager = io.Manager( this.socketUrl, {'auto connect': false } );
+        var manager = this.manager = io.Manager( this.socketUrl, {autoConnect: this.autoConnect, reconnection:this.autoReConnect } );
         this.ws = manager.socket(this.namespace);
         
 	      manager.on('open', this.onConnect.bind(this) );
@@ -111,11 +125,6 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
 	      manager.on('reconnect_failed', this.onReconnectFailed.bind(this) );
 	      manager.on('reconnect_error', this.onError.bind(this) );
         
-        //this.ws = io.connect(this.socketUrl,{'auto connect': false });
-        /*this.ws.on('connect', this.onConnect.bind(this) );
-	      this.ws.on('disconnect', this.onDisconnect.bind(this) );
-        this.ws.on('error', this.onError.bind(this) );
-	      this.ws.on('connect_failed', this.onError.bind(this) );*/
       },
       //public api
       /**
@@ -127,7 +136,7 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
        */
       emit: function(event, data)
 	    {
-			  console.log("sending '"+event+ "'via polymer-socket-io: data",data);
+			  //console.log("sending '"+event+ "'via polymer-socket-io: data",data);
 			  try
 			  {
 				  if(this.ws) this.ws.emit(event, data);
@@ -166,14 +175,9 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
         }
 	    },
       //change handlers
-      connectedChanged: function(oldValue)
+      _connectedChanged: function(oldValue)
       {
-        console.log("connectedChanged",oldValue,"->",this._connected);
-        /*if(!oldValue && this.connected)
-        {
-          this.connect();
-        }
-        else{ this.disconnect();}*/
+        this.connected = this._connected;
       },
       outMessageChanged: function()
 		  {
@@ -201,7 +205,7 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
       listenToChanged: function(oldListenTo)
       {
         //console.log("listenToList changed",this.listenTo,this.connected,this.ws);
-        if(this.ws != undefined)
+        if(this.ws !== undefined)
         {
           if(oldListenTo)
           {
@@ -220,12 +224,12 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
       },
       //event handlers
       onConnect:function(event){
-        console.log("polymer-socket-io connected")
+        //console.log("polymer-socket-io connected")
         this._connected = true;
         this.fire('s-io-connected');
       },
       onDisconnect:function(event){
-        console.log("polymer-socket-io disconnected")
+        //console.log("polymer-socket-io disconnected")
         this._connected = false;
         this.fire('s-io-disconnected');
       },
@@ -239,14 +243,13 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
       },
       onMessageRecieved:function(event,msg)
       { 
-        //console.log("recieved data",event, msg)
         this.inMessage = {event:event,data:msg};
-        //console.log("firing event",'s-io-'+event);
         this.fire('s-io-'+event, {msg:msg});
         //TODO: replace with <core-signals>
       },
 	    beforeUnload: function(event) {
 		    this.disconnect();
+		    console.log("before unload");
         this.manager.removeAllListeners('connect');
         this.manager.removeAllListeners('disconnect');
 	      this.manager.removeAllListeners('error');

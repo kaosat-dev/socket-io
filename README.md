@@ -25,15 +25,13 @@ A small chat application is included as a more complex demo
                   npm install socket.io
                   
 
-- Start the demo socket.io server using
+- Start the demo socket.io/web server using
 
 
                   node demo-chat-server.js
                   
 
-- start the webserver of your choice in the root directory
-- 
-- Navigate to localhost:<port>/demo-chat-client.html to try it out
+- Navigate to localhost:8090/demo-chat-client.html to try it out
 
 Licence
 =======
