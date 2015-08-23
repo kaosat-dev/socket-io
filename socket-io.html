@@ -218,7 +218,7 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
           for(var i=0;i<this.listenTo.length;i++)
           {
             var messageName = this.listenTo[i];
-            this.ws.on(messageName, this.onMessageRecieved.bind(this, messageName));
+            this.ws.on(messageName, this.onMessageReceived.bind(this, messageName));
           }
         }
       },
@@ -241,7 +241,7 @@ TODO: should we expose some event so parsing the "inMessage" is optional (for mo
 	    {
 		    console.log('Reconnect failed polymer-socket-io',error);
       },
-      onMessageRecieved:function(event,msg)
+      onMessageReceived:function(event,msg)
       { 
         this.inMessage = {event:event,data:msg};
         this.fire('s-io-'+event, {msg:msg});
